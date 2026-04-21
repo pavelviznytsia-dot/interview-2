@@ -8,26 +8,29 @@ export default function RewardsList({ categoryId }) {
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(function () {
-    async function fetchRewards() {
-      setIsLoading(true);
+  useEffect(
+    function () {
+      async function fetchRewards() {
+        setIsLoading(true);
 
-      const url = categoryId
-        ? `https://fakestoreapi.com/products/category/${encodeURIComponent(
-            categoryId,
-          )}?limit=6`
-        : API_URL;
+        const url = categoryId
+          ? `https://fakestoreapi.com/products/category/${encodeURIComponent(
+              categoryId,
+            )}?limit=6`
+          : API_URL;
 
-      const res = await fetch(url);
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : [];
+        const res = await fetch(url);
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : [];
 
-      setItems(list);
-      setIsLoading(false);
-    }
+        setItems(list);
+        setIsLoading(false);
+      }
 
-    fetchRewards();
-  }, [categoryId]);
+      fetchRewards();
+    },
+    [categoryId],
+  );
 
   if (isLoading) {
     return <div className={styles.spinner}>Loading...</div>;
@@ -45,7 +48,9 @@ export default function RewardsList({ categoryId }) {
               description={item.description}
               price={item.price}
               imageUrl={item.image}
-              onClaim={function () {}}
+              onClaim={function () {
+                console.log("claim", item.id);
+              }}
             />
           );
         })}

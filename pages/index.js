@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/router";
 import RewardsList from "features/rewards/RewardsList/RewardsList";
 import { useIsClient } from "@/hooks/useIsClient";
 import styles from "@/styles/Home.module.css";
@@ -10,14 +11,58 @@ const CATEGORY_OPTIONS = [
   { value: "men's clothing", label: "men's clothing" },
 ];
 
+const VALID_CATEGORIES = new Set(
+  CATEGORY_OPTIONS.map(function (o) {
+    return o.value;
+  }).filter(Boolean),
+);
+
 export default function Home() {
   const isClient = useIsClient();
-  const [localCategory, setLocalCategory] = useState("");
-  const selectValue = localCategory;
+  const router = useRouter();
+
+  const rawCategory = router.query.category;
+  const queryCategory = Array.isArray(rawCategory) ? rawCategory[0] : rawCategory;
+  const selectValue =
+    queryCategory && VALID_CATEGORIES.has(queryCategory) ? queryCategory : "";
+
+  const hasCategoryKey = Object.prototype.hasOwnProperty.call(
+    router.query,
+    "category",
+  );
+  const isInvalidCategory =
+    hasCategoryKey &&
+    (Array.isArray(rawCategory) ||
+      !queryCategory ||
+      !VALID_CATEGORIES.has(queryCategory));
+
+  useEffect(
+    function () {
+      if (!router.isReady || !isInvalidCategory) return;
+      const nextQuery = { ...router.query };
+      delete nextQuery.category;
+      router.replace(
+        { pathname: router.pathname, query: nextQuery },
+        undefined,
+        { shallow: true, scroll: false },
+      );
+    },
+    [router, router.isReady, isInvalidCategory],
+  );
 
   function handleCategoryChange(e) {
     const value = e.target.value;
-    setLocalCategory(value);
+    const nextQuery = { ...router.query };
+    if (value) {
+      nextQuery.category = value;
+    } else {
+      delete nextQuery.category;
+    }
+    router.replace(
+      { pathname: router.pathname, query: nextQuery },
+      undefined,
+      { shallow: true, scroll: false },
+    );
   }
 
   return (
@@ -31,7 +76,7 @@ export default function Home() {
         <select
           id="category-select"
           className={styles.select}
-          disabled={!isClient}
+          disabled={!isClient || !router.isReady}
           value={selectValue}
           onChange={handleCategoryChange}
         >
@@ -44,8 +89,8 @@ export default function Home() {
           })}
         </select>
       </div>
-      {isClient ? (
-        <RewardsList categoryId={localCategory || undefined} />
+      {isClient && router.isReady ? (
+        <RewardsList categoryId={selectValue || undefined} />
       ) : (
         <p className={styles.loading}>Loading...</p>
       )}

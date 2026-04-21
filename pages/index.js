@@ -1,4 +1,4 @@
-import { useRouter } from "next/router";
+import { useState } from "react";
 import RewardsList from "features/rewards/RewardsList/RewardsList";
 import { useIsClient } from "@/hooks/useIsClient";
 import styles from "@/styles/Home.module.css";
@@ -10,36 +10,14 @@ const CATEGORY_OPTIONS = [
   { value: "men's clothing", label: "men's clothing" },
 ];
 
-const PRESET_CATEGORY_VALUES = new Set(
-  CATEGORY_OPTIONS.map(function (opt) {
-    return opt.value;
-  }),
-);
-
-function categoryFromQuery(query) {
-  const raw = query.category;
-  if (raw === undefined || raw === null) {
-    return "";
-  }
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  return typeof value === "string" ? value : "";
-}
-
 export default function Home() {
-  const router = useRouter();
   const isClient = useIsClient();
-  const routerReady = isClient && router.isReady;
-  const rawCategory = categoryFromQuery(router.query);
-  const categoryId = routerReady ? rawCategory : "";
-  const selectValue = PRESET_CATEGORY_VALUES.has(categoryId)
-    ? categoryId
-    : "";
+  const [localCategory, setLocalCategory] = useState("");
+  const selectValue = localCategory;
 
   function handleCategoryChange(e) {
     const value = e.target.value;
-    const href =
-      value === "" ? "/" : `/?category=${encodeURIComponent(value)}`;
-    router.push(href, undefined, { scroll: false });
+    setLocalCategory(value);
   }
 
   return (
@@ -53,7 +31,7 @@ export default function Home() {
         <select
           id="category-select"
           className={styles.select}
-          disabled={!routerReady}
+          disabled={!isClient}
           value={selectValue}
           onChange={handleCategoryChange}
         >
@@ -66,8 +44,8 @@ export default function Home() {
           })}
         </select>
       </div>
-      {routerReady ? (
-        <RewardsList categoryId={categoryId || undefined} />
+      {isClient ? (
+        <RewardsList categoryId={localCategory || undefined} />
       ) : (
         <p className={styles.loading}>Loading...</p>
       )}
